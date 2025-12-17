@@ -10,6 +10,15 @@
   font-display: swap;
 }
 
+.material-icon-glyph {
+  font-family: 'MaterialIcons', sans-serif !important;
+  font-weight: 400 !important;
+  font-style: normal;
+  line-height: 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
 @theme {
   --color-primary-50: var(--color-primary-50);
   --color-primary-100: var(--color-primary-100);
