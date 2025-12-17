@@ -1,0 +1,342 @@
+import { CommonModule } from '@angular/common';
+import { Component, effect, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
+import { ApiService } from '../../../core/services/api.service';
+import { LoadingService } from '../../../core/services/loading.service';
+import { SwalService } from '../../../shared/swal/swal.service';
+
+type Channel = {
+  id: number;
+  name: string;
+  icon_codepoint: number | null;
+  icon_color: string | null;
+  is_active: boolean;
+  is_default: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  Users: {
+    display_name: string;
+  }
+  channel_role_visibility?: Array<{
+    channel_id: number;
+    roles: { id: string; name: string };
+  }>;
+  last_message_content: string | null;
+  last_message_at: string | null;
+  unread_count: number;
+};
+
+type RoleVisibility = { id: string; name: string; hasAccess: boolean };
+
+@Component({
+  selector: 'app-channels',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './channels.html',
+  styleUrl: './channels.css',
+})
+export class Channels {
+  channels = signal<Channel[]>([]);
+  loading = signal(false);
+  query = signal('');
+  statusFilter = signal<'all' | 'active' | 'inactive'>('all');
+  showCreateModal = signal(false);
+  showRolesModal = signal(false);
+  showEditModal = signal(false);
+  rolesLoading = signal(false);
+  rolesSaving = signal(false);
+  rolesQuery = signal('');
+  roleVisibility = signal<RoleVisibility[]>([]);
+  selectedChannel = signal<Channel | null>(null);
+  editName = signal('');
+  editStatus = signal<'active' | 'inactive'>('active');
+
+  rolesTotal = signal<number | null>(null);
+  visibilitySummary = signal<Record<number, { selected: number; total: number | null }>>({});
+  channelRoleNames = signal<Record<number, string[]>>({});
+
+  constructor(
+    private readonly api: ApiService,
+    private readonly loadingService: LoadingService,
+    private readonly swal: SwalService
+  ) {
+    let previousOverflow = '';
+    effect((onCleanup) => {
+      if (typeof document === 'undefined') return;
+      const open = this.showCreateModal() || this.showRolesModal() || this.showEditModal();
+      if (open) {
+        previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = previousOverflow || '';
+      }
+
+      const onKeyDown = (event: KeyboardEvent) => {
+        if (!this.showCreateModal() && !this.showRolesModal() && !this.showEditModal()) return;
+        if (event.key === 'Escape') this.closeOverlays();
+      };
+
+      window.addEventListener('keydown', onKeyDown);
+      onCleanup(() => window.removeEventListener('keydown', onKeyDown));
+    });
+  }
+
+  async ngOnInit() {
+    await Promise.all([this.fetchRolesTotal(), this.fetchChannels()]);
+  }
+
+  async fetchRolesTotal() {
+    try {
+      const res = await firstValueFrom(
+        this.api.getPrivate<{ data: Array<{ id: string; name: string }> }>('/role', {
+          withCredentials: true,
+        })
+      );
+      this.rolesTotal.set((res.data || []).length);
+
+      const total = this.rolesTotal();
+      if (total !== null) {
+        this.visibilitySummary.update((m) => {
+          const next: Record<number, { selected: number; total: number | null }> = { ...m };
+          for (const k of Object.keys(next)) {
+            next[Number(k)] = { ...next[Number(k)], total };
+          }
+          return next;
+        });
+      }
+    } catch {
+      this.rolesTotal.set(null);
+    }
+  }
+
+  async fetchChannels() {
+    this.loading.set(true);
+
+    this.loadingService.show();
+    try {
+      const res = await firstValueFrom(
+        this.api.getPrivate<{ data: Channel[] }>('/channel', { withCredentials: true })
+      );
+      const channels = res.data || [];
+      this.channels.set(channels);
+
+      const total = this.rolesTotal();
+      const roleNames: Record<number, string[]> = {};
+      const summary: Record<number, { selected: number; total: number | null }> = {};
+
+      for (const channel of channels) {
+        const names = Array.from(
+          new Set((channel.channel_role_visibility || []).map((v) => v.roles?.name).filter(Boolean))
+        ) as string[];
+        roleNames[channel.id] = names;
+        summary[channel.id] = { selected: names.length, total };
+      }
+
+      this.channelRoleNames.set(roleNames);
+      this.visibilitySummary.set(summary);
+    } catch (err: any) {
+      const message = err?.error?.message || 'ไม่สามารถดึงข้อมูลแชนแนลได้';
+      this.swal.error('แจ้งเตือน', message);
+    } finally {
+      this.loading.set(false);
+      this.loadingService.hide();
+    }
+  }
+
+  get filteredChannels() {
+    const q = this.query().trim().toLowerCase();
+    const filter = this.statusFilter();
+    return (this.channels() || [])
+      .filter((c) => {
+        if (filter === 'active' && !c.is_active) return false;
+        if (filter === 'inactive' && c.is_active) return false;
+        if (!q) return true;
+        return c.name.toLowerCase().includes(q) || String(c.id).includes(q);
+      })
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }
+
+
+
+  closeOverlays() {
+    this.showRolesModal.set(false);
+    this.showEditModal.set(false);
+  }
+
+
+  normalizeColor(value: string | null | undefined) {
+    const raw = String(value ?? '').trim();
+    if (!raw) return null;
+    const hex = raw.startsWith('#') ? raw.slice(1) : raw;
+    if (!/^[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/.test(hex)) return null;
+    if (hex.length === 8) {
+      const alpha = hex.slice(0, 2);
+      const rgb = hex.slice(2);
+      return `#${rgb}${alpha}`;
+    }
+    return `#${hex}`;
+  }
+
+  codepointHex(codepoint: number | null) {
+    if (!codepoint || Number.isNaN(codepoint)) return '';
+    return `0x${codepoint.toString(16).toUpperCase()}`;
+  }
+
+  iconGlyph(codepoint: number | null) {
+    if (!codepoint || Number.isNaN(codepoint)) return '';
+    if (codepoint <= 0 || codepoint >= 0x110000) return '';
+    try {
+      return String.fromCodePoint(codepoint);
+    } catch {
+      return '';
+    }
+  }
+
+  shortUuid(uuid: string | null) {
+    if (!uuid) return '-';
+    if (uuid.length <= 8) return uuid;
+    return `${uuid.slice(0, 4)}…${uuid.slice(-4)}`;
+  }
+
+  thaiDate(iso: string | null) {
+    if (!iso) return '-';
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return '-';
+    return date.toLocaleString('th-TH', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+
+
+  async confirmDelete(channel: Channel) {
+    const ok = await this.swal.question('ยืนยันการลบ', `ต้องการลบแชนแนล "${channel.name}" ใช่หรือไม่?`);
+    if (!ok) return;
+
+    this.loadingService.show();
+    try {
+      await firstValueFrom(this.api.deletePrivate(`/channel/${channel.id}`));
+      await this.fetchChannels();
+      await this.swal.success('สำเร็จ', 'ลบแชนแนลเรียบร้อยแล้ว');
+    } catch (err: any) {
+      const message = err?.error?.message || 'ไม่สามารถลบแชนแนลได้';
+      await this.swal.error('ไม่สำเร็จ', message);
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
+  openEdit(channel: Channel) {
+    this.selectedChannel.set(channel);
+    this.editName.set(channel.name || '');
+    this.editStatus.set(channel.is_active ? 'active' : 'inactive');
+    this.showEditModal.set(true);
+  }
+
+  async saveEdit() {
+    const channel = this.selectedChannel();
+    if (!channel) return;
+
+    const name = this.editName().trim();
+    const isActive = this.editStatus() === 'active';
+
+    if (!name) {
+      await this.swal.error('ไม่สำเร็จ', 'กรุณาระบุชื่อแชนแนล');
+      return;
+    }
+
+    this.loadingService.show();
+    try {
+      await firstValueFrom(
+        this.api.putPrivate(`/channel/${channel.id}`, { name, is_active: isActive })
+      );
+      this.showEditModal.set(false);
+      await this.fetchChannels();
+      await this.swal.success('สำเร็จ', 'บันทึกข้อมูลแชนแนลเรียบร้อยแล้ว');
+    } catch (err: any) {
+      const message = err?.error?.message || 'ไม่สามารถแก้ไขแชนแนลได้';
+      await this.swal.error('ไม่สำเร็จ', message);
+    } finally {
+      this.loadingService.hide();
+    }
+  }
+
+  async openRoleVisibility(channel: Channel) {
+    this.selectedChannel.set(channel);
+    this.rolesQuery.set('');
+    this.roleVisibility.set([]);
+    this.rolesLoading.set(true);
+    this.showRolesModal.set(true);
+    this.loadingService.show();
+
+    try {
+      const res = await firstValueFrom(
+        this.api.getPrivate<{ data: RoleVisibility[] }>(`/channel/${channel.id}/roles`)
+      );
+      const roles = res.data || [];
+      this.roleVisibility.set(roles);
+      this.visibilitySummary.update((m) => ({
+        ...m,
+        [channel.id]: { selected: roles.filter((r) => r.hasAccess).length, total: roles.length },
+      }));
+    } catch (err: any) {
+      const message = err?.error?.message || 'ไม่สามารถดึงข้อมูล role ได้';
+      await this.swal.error('ไม่สำเร็จ', message);
+      this.showRolesModal.set(false);
+    } finally {
+      this.rolesLoading.set(false);
+      this.loadingService.hide();
+    }
+  }
+
+  get filteredRoles() {
+    const q = this.rolesQuery().trim().toLowerCase();
+    const roles = this.roleVisibility();
+    if (!q) return roles;
+    return roles.filter((r) => r.name.toLowerCase().includes(q));
+  }
+
+  toggleRole(roleId: string, value: boolean) {
+    this.roleVisibility.update((roles) =>
+      roles.map((r) => (r.id === roleId ? { ...r, hasAccess: value } : r))
+    );
+  }
+
+  setAllRoles(value: boolean) {
+    this.roleVisibility.update((roles) => roles.map((r) => ({ ...r, hasAccess: value })));
+  }
+
+  async saveRoleVisibility() {
+    const channel = this.selectedChannel();
+    if (!channel) return;
+    if (this.rolesSaving()) return;
+
+    const roleIds = (this.roleVisibility() || []).filter((r) => r.hasAccess).map((r) => r.id);
+    this.rolesSaving.set(true);
+    this.loadingService.show();
+
+    try {
+      await firstValueFrom(this.api.putPrivate(`/channel/${channel.id}/roles`, { role_ids: roleIds }));
+
+      this.visibilitySummary.update((m) => ({
+        ...m,
+        [channel.id]: { selected: roleIds.length, total: (this.roleVisibility() || []).length },
+      }));
+
+      this.showRolesModal.set(false);
+      await this.swal.success('สำเร็จ', 'บันทึกสิทธิ์การมองเห็นเรียบร้อยแล้ว');
+    } catch (err: any) {
+      const message = err?.error?.message || 'ไม่สามารถบันทึก role ได้';
+      await this.swal.error('ไม่สำเร็จ', message);
+    } finally {
+      this.rolesSaving.set(false);
+      this.loadingService.hide();
+    }
+  }
+
+}

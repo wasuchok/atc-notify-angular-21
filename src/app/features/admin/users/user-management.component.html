@@ -1,0 +1,59 @@
+<div class="space-y-8 font-sarabun relative">
+  <div>
+    <app-user-toolbar (addUser)="openAddModal()"></app-user-toolbar>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+    @for (user of users(); track user.id) {
+    <app-user-card [user]="user" [activeDropdownId]="activeDropdownId()" (toggleDropdown)="toggleRoleDropdown($event)"
+      (closeDropdown)="closeDropdown()" (addRole)="test()" (removeRole)="test()" (viewProfile)="openViewModal($event)"
+      (editUser)="openEditModal($event)">
+    </app-user-card>
+    }
+  </div>
+
+  <app-user-pagination [currentPage]="currentPage()" [totalPages]="totalPages()" [startIndex]="startIndex()"
+    [endIndex]="endIndex()" [totalItems]="totalItems()" [pages]="pages()" (prev)="prevPage()" (next)="nextPage()"
+    (goToPage)="goToPage($event)">
+  </app-user-pagination>
+</div>
+
+<app-user-view-modal [visible]="showViewModal() && !!selectedUser()" [user]="selectedUser()" [roleStyleFn]="roleStyle"
+  (close)="closeModals()">
+</app-user-view-modal>
+
+@if (addDrawerVisible()) {
+  <app-user-form-drawer
+    [open]="showAddModal()"
+    [form]="form"
+    [roleOptions]="teamOptions()"
+    title="เพิ่มผู้ใช้งานใหม่"
+    subtitle="กรอกข้อมูลเพื่อสร้างบัญชีผู้ใช้งานใหม่"
+    formId="create-user-form"
+    submitLabel="บันทึก"
+    [loading]="submitLoading()"
+    [errorMessage]="formError()"
+    [showPasswordFields]="true"
+    [passwordRequired]="true"
+    (close)="closeModals()"
+    (submit)="createUser()">
+  </app-user-form-drawer>
+}
+
+@if (editDrawerVisible()) {
+  <app-user-form-drawer
+    [open]="showEditModal()"
+    [form]="form"
+    [roleOptions]="teamOptions()"
+    title="แก้ไขผู้ใช้งาน"
+    subtitle="ปรับข้อมูลผู้ใช้งาน และทีมที่เข้าถึงได้"
+    formId="edit-user-form"
+    submitLabel="บันทึกการแก้ไข"
+    [loading]="submitLoading()"
+    [errorMessage]="formError()"
+    [showPasswordFields]="true"
+    [passwordRequired]="false"
+    (close)="closeModals()"
+    (submit)="updateUser()">
+  </app-user-form-drawer>
+}

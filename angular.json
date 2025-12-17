@@ -22,6 +22,11 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "**/*",
+                "input": "src/assets",
+                "output": "assets"
               }
             ],
             "styles": [
@@ -48,6 +53,11 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "fast": {
+              "sourceMap": false,
+              "optimization": false,
+              "aot": true
             }
           },
           "defaultConfiguration": "production"
@@ -55,6 +65,9 @@
         "serve": {
           "builder": "@angular/build:dev-server",
           "configurations": {
+            "fast": {
+              "buildTarget": "web-notify:build:fast"
+            },
             "production": {
               "buildTarget": "web-notify:build:production"
             },

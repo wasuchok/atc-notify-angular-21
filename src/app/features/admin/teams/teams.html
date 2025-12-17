@@ -1,0 +1,310 @@
+<div class="space-y-5 font-sarabun">
+    <!-- Header -->
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h1 class="text-xl sm:text-2xl font-bold text-slate-900">จัดการทีม</h1>
+            <p class="text-sm text-slate-500">จัดการทีม (Role) และสมาชิกในทีม (เฉพาะ admin)</p>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <button type="button" (click)="fetchTeams()"
+                class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors text-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-3-6.708M21 3v6h-6" />
+                </svg>
+                รีเฟรช
+            </button>
+
+            <button type="button" (click)="openCreate()"
+                class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-[#1b3c5d] text-white hover:bg-[#173553] transition-colors text-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                สร้างทีม
+            </button>
+        </div>
+    </div>
+
+    <!-- Split View -->
+    <div class="grid gap-4 lg:grid-cols-12">
+        <!-- Left: Teams list -->
+        <div class="lg:col-span-5 xl:col-span-4 space-y-3">
+            <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <p class="text-sm font-bold text-slate-900">ทีมทั้งหมด</p>
+                        <p class="text-xs text-slate-500">เลือกทีมเพื่อจัดการสมาชิก</p>
+                    </div>
+                    <span class="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                        {{ filteredTeams.length }} รายการ
+                    </span>
+                </div>
+
+                <div class="mt-3 relative">
+                    <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 103.5 10.5a7.5 7.5 0 0013.15 6.15z" />
+                        </svg>
+                    </span>
+                    <input [ngModel]="query()" (ngModelChange)="query.set($event)" type="text"
+                        placeholder="ค้นหาจากชื่อทีม"
+                        class="w-full pl-10 pr-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#1b3c5d] focus:ring-4 focus:ring-[#1b3c5d]/10 outline-none transition-all text-sm" />
+                </div>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                @if (filteredTeams.length === 0) {
+                <div class="p-10 text-center">
+                    <div
+                        class="mx-auto w-12 h-12 rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                    </div>
+                    <p class="mt-3 text-sm font-semibold text-slate-800">ยังไม่มีทีม</p>
+                    <p class="text-xs text-slate-500">กด “สร้างทีม” เพื่อเพิ่มทีมใหม่</p>
+                </div>
+                } @else {
+                <div class="max-h-[620px] overflow-auto p-2">
+                    <button type="button" *ngFor="let t of filteredTeams" (click)="selectTeam(t)"
+                        class="w-full text-left p-3 rounded-xl border transition-colors hover:bg-slate-50"
+                        [class.border-[#1b3c5d]]="selectedTeam()?.id === t.id"
+                        [class.bg-[#1b3c5d]/5]="selectedTeam()?.id === t.id"
+                        [class.border-slate-200]="selectedTeam()?.id !== t.id" [class.bg-white]="selectedTeam()?.id !== t.id">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="min-w-0">
+                                <p class="text-sm font-bold text-slate-900 truncate">{{ t.name }}</p>
+                                <p class="text-[11px] text-slate-500 font-mono truncate">{{ t.id }}</p>
+                            </div>
+                            <span
+                                class="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 flex-shrink-0">
+                                {{ memberCount(t) }} คน
+                            </span>
+                        </div>
+                        <p class="mt-1 text-[11px] text-slate-400">สร้างเมื่อ: {{ thaiDate(t.created_at) }}</p>
+                    </button>
+                </div>
+                }
+            </div>
+        </div>
+
+        <!-- Right: Team details -->
+        <div class="lg:col-span-7 xl:col-span-8">
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                @if (!selectedTeam()) {
+                <div class="p-10 text-center">
+                    <div
+                        class="mx-auto w-12 h-12 rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M8 7V3m8 4V3M4 11h16M6 21h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                    </div>
+                    <p class="mt-3 text-sm font-semibold text-slate-800">เลือกทีมทางซ้าย</p>
+                    <p class="text-xs text-slate-500">เพื่อดู/แก้ไขทีมและจัดการสมาชิก</p>
+                </div>
+                } @else {
+                <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-3">
+                    <div class="min-w-0">
+                        <p class="text-sm font-bold text-slate-900 truncate">{{ selectedTeam()?.name }}</p>
+                        <p class="text-[11px] text-slate-500 font-mono truncate">{{ selectedTeam()?.id }}</p>
+                    </div>
+
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        <button type="button" (click)="openEdit(selectedTeam()!)"
+                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors text-xs">
+                            แก้ไขชื่อทีม
+                        </button>
+                        <button type="button" (click)="confirmDelete(selectedTeam()!)"
+                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors text-xs">
+                            ลบทีม
+                        </button>
+                    </div>
+                </div>
+
+                <div class="p-5 space-y-4">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="relative w-full sm:max-w-md">
+                            <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 103.5 10.5a7.5 7.5 0 0013.15 6.15z" />
+                                </svg>
+                            </span>
+                            <input [ngModel]="membersQuery()" (ngModelChange)="membersQuery.set($event)" type="text"
+                                placeholder="ค้นหาผู้ใช้..."
+                                class="w-full pl-10 pr-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#1b3c5d] focus:ring-4 focus:ring-[#1b3c5d]/10 outline-none transition-all text-sm" />
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <button type="button" (click)="setAll(true)"
+                                class="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors text-xs">
+                                เลือกทั้งหมด
+                            </button>
+                            <button type="button" (click)="setAll(false)"
+                                class="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors text-xs">
+                                ไม่เลือกทั้งหมด
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-200 rounded-2xl overflow-hidden">
+                        <div class="px-4 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                            <p class="text-sm font-semibold text-slate-800">สมาชิกในทีม</p>
+                            <p class="text-xs text-slate-500">
+                                {{ selectedUserIds().size }} คน / {{ users().length }} ผู้ใช้
+                            </p>
+                        </div>
+
+                        <div class="max-h-[560px] overflow-auto p-2">
+                            @if (membersLoading()) {
+                            <div class="p-8 text-center text-slate-500 text-sm">กำลังโหลดข้อมูล...</div>
+                            } @else {
+                            <div class="space-y-1">
+                                <div *ngFor="let u of filteredUsers"
+                                    class="flex items-center justify-between gap-3 p-3 rounded-xl hover:bg-slate-50">
+                                    <div class="flex items-center gap-3 min-w-0">
+                                        <div
+                                            class="w-10 h-10 rounded-2xl flex items-center justify-center ring-1 ring-slate-200 shadow-sm flex-shrink-0 bg-slate-200 text-slate-700 font-bold">
+                                            {{ userInitial(u.display_name) }}
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="flex items-center gap-2 flex-wrap">
+                                                <p class="text-sm font-semibold text-slate-900 truncate max-w-[360px]">{{ u.display_name }}</p>
+                                                <span
+                                                    class="text-[10px] px-2 py-0.5 rounded-full border"
+                                                    [class.bg-rose-50]="(u.role || '').toLowerCase() === 'admin'"
+                                                    [class.text-rose-700]="(u.role || '').toLowerCase() === 'admin'"
+                                                    [class.border-rose-200]="(u.role || '').toLowerCase() === 'admin'"
+                                                    [class.bg-slate-50]="(u.role || '').toLowerCase() !== 'admin'"
+                                                    [class.text-slate-600]="(u.role || '').toLowerCase() !== 'admin'"
+                                                    [class.border-slate-200]="(u.role || '').toLowerCase() !== 'admin'">
+                                                    {{ (u.role || '').toLowerCase() === 'admin' ? 'Admin' : 'Employee' }}
+                                                </span>
+                                            </div>
+                                            <p class="text-[11px] text-slate-500 truncate">{{ u.email }}</p>
+                                            <p class="text-[11px] text-slate-400 font-mono truncate">{{ u.uuid }}</p>
+                                        </div>
+                                    </div>
+
+                                    <label class="inline-flex items-center gap-2 select-none">
+                                        <input type="checkbox" [checked]="isSelected(u.uuid)"
+                                            (change)="toggleUser(u.uuid, $any($event.target).checked)"
+                                            class="h-5 w-5 rounded border-slate-300 text-[#1b3c5d] focus:ring-[#1b3c5d]" />
+                                        <span class="text-xs text-slate-600">อยู่ในทีม</span>
+                                    </label>
+                                </div>
+                            </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="px-5 py-4 border-t border-slate-100 flex items-center justify-end gap-2 bg-white">
+                    <button type="button" (click)="saveMembers()" [disabled]="membersSaving() || membersLoading()"
+                        class="px-4 py-2 rounded-xl bg-[#1b3c5d] text-white hover:bg-[#173553] transition-colors text-sm disabled:opacity-70 disabled:cursor-not-allowed">
+                        {{ membersSaving() ? 'กำลังบันทึก...' : 'บันทึกสมาชิก' }}
+                    </button>
+                </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Modal -->
+    @if (showCreateModal()) {
+    <div class="fixed inset-0 z-[3000]">
+        <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" (click)="closeOverlays()"></div>
+        <div class="absolute inset-0 flex items-center justify-center p-4">
+            <div class="w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+                <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                    <div class="min-w-0">
+                        <p class="text-sm font-bold text-slate-900">สร้างทีม</p>
+                        <p class="text-xs text-slate-500">ระบุชื่อทีม (Role)</p>
+                    </div>
+                    <button type="button" (click)="closeOverlays()"
+                        class="w-9 h-9 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-center text-slate-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="p-5 space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อทีม</label>
+                        <input [ngModel]="createName()" (ngModelChange)="createName.set($event)" type="text"
+                            placeholder="เช่น GA"
+                            class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#1b3c5d] focus:ring-4 focus:ring-[#1b3c5d]/10 outline-none transition-all text-sm" />
+                    </div>
+                </div>
+
+                <div class="px-5 py-4 border-t border-slate-100 flex items-center justify-end gap-2 bg-white">
+                    <button type="button" (click)="closeOverlays()"
+                        class="px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors text-sm">
+                        ยกเลิก
+                    </button>
+                    <button type="button" (click)="createTeam()"
+                        class="px-4 py-2 rounded-xl bg-[#1b3c5d] text-white hover:bg-[#173553] transition-colors text-sm">
+                        สร้าง
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    }
+
+    <!-- Edit Modal -->
+    @if (showEditModal()) {
+    <div class="fixed inset-0 z-[3000]">
+        <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" (click)="closeOverlays()"></div>
+        <div class="absolute inset-0 flex items-center justify-center p-4">
+            <div class="w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+                <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                    <div class="min-w-0">
+                        <p class="text-sm font-bold text-slate-900 truncate">แก้ไขทีม: {{ selectedTeam()?.name }}</p>
+                        <p class="text-xs text-slate-500">แก้ไขชื่อทีม</p>
+                    </div>
+                    <button type="button" (click)="closeOverlays()"
+                        class="w-9 h-9 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-center text-slate-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="p-5 space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อทีม</label>
+                        <input [ngModel]="editName()" (ngModelChange)="editName.set($event)" type="text"
+                            placeholder="เช่น GA"
+                            class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#1b3c5d] focus:ring-4 focus:ring-[#1b3c5d]/10 outline-none transition-all text-sm" />
+                    </div>
+                </div>
+
+                <div class="px-5 py-4 border-t border-slate-100 flex items-center justify-end gap-2 bg-white">
+                    <button type="button" (click)="closeOverlays()"
+                        class="px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors text-sm">
+                        ยกเลิก
+                    </button>
+                    <button type="button" (click)="saveEdit()"
+                        class="px-4 py-2 rounded-xl bg-[#1b3c5d] text-white hover:bg-[#173553] transition-colors text-sm">
+                        บันทึก
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    }
+
+</div>
