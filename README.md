@@ -1,59 +1,71 @@
-# WebNotify
+# web-notify
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.0.3.
+Frontend (Angular) สำหรับระบบ Notify-ATC
 
-## Development server
+## Requirements
 
-To start a local development server, run:
+- Node.js + npm (repo ใช้ `npm@10.x`)
 
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Setup
 
 ```bash
-ng generate component component-name
+cd web-notify
+npm install
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Run (dev)
 
 ```bash
-ng generate --help
+cd web-notify
+npm run start
 ```
 
-## Building
+เปิด `http://localhost:4200`
 
-To build the project run:
+## Build
 
 ```bash
-ng build
+cd web-notify
+npm run build
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Output อยู่ที่ `web-notify/dist/web-notify`
 
-## Running unit tests
+## Environment / API Base URL
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+ค่า default ของ API คือ `http://localhost:3300/api/v1` (ดูที่ `web-notify/src/app/core/config/api.config.ts`)
 
-```bash
-ng test
+สามารถ override ได้ด้วย env var ตอนรัน (Angular/Vite):
+
+- `NG_APP_API_URL`
+- `NG_APP_API_BASE`
+
+ตัวอย่าง (PowerShell):
+
+```powershell
+$env:NG_APP_API_URL="http://10.17.3.244:3300/api/v1"
+npm run start
 ```
 
-## Running end-to-end tests
+## Admin Routes
 
-For end-to-end (e2e) testing, run:
+- `/admin/dashboard` ภาพรวม
+- `/admin/users` จัดการผู้ใช้งาน + assign roles
+- `/admin/channels` จัดการแชนแนล + role visibility + แก้ชื่อ/สถานะ + ลบ (admin)
+- `/admin/teams` จัดการทีม (Role) แบบ split-view + จัดการสมาชิกทีม
 
-```bash
-ng e2e
-```
+## Notes
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+- `MaterialIcons-Regular.otf` ถูกวางไว้ที่ `web-notify/src/assets/fonts/MaterialIcons-Regular.otf` เพื่อให้ `icon_codepoint` แสดงไอคอน “ตรงกับ Flutter”
+- Angular assets ถูกกำหนดไว้ที่ `web-notify/angular.json` (`public/` และ `src/assets/`)
 
-## Additional Resources
+## Screenshots
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+<p>
+  <img src="public/pic1.png" width="48%" />
+  <img src="public/pic2.png" width="48%" />
+</p>
+<p>
+  <img src="public/pic3.png" width="48%" />
+  <img src="public/pic4.png" width="48%" />
+</p>
