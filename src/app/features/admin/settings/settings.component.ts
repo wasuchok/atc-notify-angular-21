@@ -126,6 +126,12 @@ export class SettingsComponent {
       description: 'สร้าง/สิทธิ์/ลบแชนแนล',
       icon: 'M8 10h8M8 14h5m-8 4h10l5 3V6a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
     },
+    {
+      path: 'webhooks',
+      label: 'Webhook',
+      description: 'สร้าง Webhook สำหรับยิงเข้าแชนแนล',
+      icon: 'M4 12a8 8 0 018-8v3m0 10v3a8 8 0 01-8-8zm16 0a8 8 0 01-8 8v-3m0-10V4a8 8 0 018 8z',
+    },
   ];
 
   filteredItems = computed(() => {
@@ -142,11 +148,13 @@ export class SettingsComponent {
     const dashboard = items.filter((i) => i.path === 'dashboard');
     const people = items.filter((i) => i.path === 'users' || i.path === 'teams');
     const channels = items.filter((i) => i.path === 'channels');
+    const integrations = items.filter((i) => i.path === 'webhooks');
 
     const groups: Array<{ label: string; items: typeof items }> = [];
     if (dashboard.length) groups.push({ label: 'ทั่วไป', items: dashboard });
     if (people.length) groups.push({ label: 'ผู้ใช้และทีม', items: people });
     if (channels.length) groups.push({ label: 'แชนแนล', items: channels });
+    if (integrations.length) groups.push({ label: 'การเชื่อมต่อ', items: integrations });
     return groups;
   });
 }

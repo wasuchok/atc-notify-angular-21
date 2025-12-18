@@ -43,8 +43,8 @@ import { FormsModule } from '@angular/forms';
               (change)="onStatusChange($any($event.target).value)"
               class="appearance-none pl-4 pr-10 py-3 bg-slate-50 border border-transparent hover:bg-white hover:border-slate-200 focus:bg-white focus:border-primary-500 rounded-xl text-sm text-slate-600 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all cursor-pointer min-w-[140px]">
               <option value="">ทุกสถานะ</option>
-              <option value="Active">ใช้งานอยู่</option>
-              <option value="Inactive">ระงับการใช้งาน</option>
+              <option value="active">ใช้งานอยู่</option>
+              <option value="inactive">ระงับการใช้งาน</option>
             </select>
             <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -59,8 +59,8 @@ import { FormsModule } from '@angular/forms';
               (change)="onRoleChange($any($event.target).value)"
               class="appearance-none pl-4 pr-10 py-3 bg-slate-50 border border-transparent hover:bg-white hover:border-slate-200 focus:bg-white focus:border-primary-500 rounded-xl text-sm text-slate-600 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all cursor-pointer min-w-[140px]">
               <option value="">ทุกตำแหน่ง</option>
-              <option value="Admin">ผู้ดูแลระบบ</option>
-              <option value="User">ผู้ใช้งานทั่วไป</option>
+              <option value="admin">ผู้ดูแลระบบ</option>
+              <option value="employee">พนักงาน</option>
             </select>
             <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

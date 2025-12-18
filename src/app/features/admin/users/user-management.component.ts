@@ -29,6 +29,7 @@ import { User } from './user.model';
 export class UserManagementComponent {
   private addDrawerCloseTimer: ReturnType<typeof setTimeout> | null = null;
   private editDrawerCloseTimer: ReturnType<typeof setTimeout> | null = null;
+  private searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
   private editingUserId: string | null = null;
 
   constructor(
@@ -59,6 +60,10 @@ export class UserManagementComponent {
   users = signal<User[]>([]);
 
   activeDropdownId = signal<string | null>(null);
+
+  searchQuery = signal('');
+  filterStatus = signal('');
+  filterRole = signal('');
 
   showAddModal = signal(false);
   addDrawerVisible = signal(false);
@@ -104,6 +109,14 @@ export class UserManagementComponent {
   async fetchUsers(page = 1, limit = 10) {
     try {
       this.loadingService.show();
+      const q = this.searchQuery().trim();
+      const status = this.filterStatus();
+      const role = this.filterRole();
+      const params: Record<string, string | number> = { page, limit };
+      if (q) params['q'] = q;
+      if (status) params['status'] = status;
+      if (role) params['role'] = role;
+
       const res = await firstValueFrom(
         this.api.getPrivate<{
           data: Array<{
@@ -114,11 +127,12 @@ export class UserManagementComponent {
             branch: string;
             team: string | null;
             created_at: string;
+            deleted_at?: string | null;
             user_roles?: Array<{ roles?: { name: string } | null }>;
           }>;
           pagination: { page: number; limit: number; total: number; totalPages: number };
         }>('/users', {
-          params: { page, limit }
+          params
         })
       );
 
@@ -137,7 +151,7 @@ export class UserManagementComponent {
           level: u.role,
           branch: u.branch,
           team: u.team,
-          status: 'Active',
+          status: u.deleted_at ? 'Inactive' : 'Active',
           avatarColor: colors[idx % colors.length],
           lastLogin: this.formatThaiDate(u.created_at)
         }))
@@ -157,6 +171,28 @@ export class UserManagementComponent {
   ngOnInit() {
     this.fetchUsers(this.currentPage(), this.itemsPerPage());
     this.fetchTeamOptions();
+  }
+
+  onSearchChange(value: string) {
+    this.searchQuery.set(value);
+    if (this.searchDebounceTimer) clearTimeout(this.searchDebounceTimer);
+    this.searchDebounceTimer = setTimeout(() => {
+      this.currentPage.set(1);
+      this.fetchUsers(1, this.itemsPerPage());
+      this.searchDebounceTimer = null;
+    }, 350);
+  }
+
+  onStatusChange(value: string) {
+    this.filterStatus.set(value);
+    this.currentPage.set(1);
+    this.fetchUsers(1, this.itemsPerPage());
+  }
+
+  onRoleChange(value: string) {
+    this.filterRole.set(value);
+    this.currentPage.set(1);
+    this.fetchUsers(1, this.itemsPerPage());
   }
 
   openAddModal() {

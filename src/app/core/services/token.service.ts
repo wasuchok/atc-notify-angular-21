@@ -5,6 +5,15 @@ interface TokenPair {
   refreshToken?: string;
 }
 
+type JwtPayload = {
+  sub?: string;
+  email?: string;
+  role?: string;
+  exp?: number;
+  iat?: number;
+  [key: string]: unknown;
+};
+
 @Injectable({ providedIn: 'root' })
 export class TokenService {
   private readonly accessKey = 'access_token';
@@ -30,6 +39,31 @@ export class TokenService {
     this.deleteCookie(this.refreshKey);
   }
 
+  getAccessTokenPayload(): JwtPayload | null {
+    const token = this.getAccessToken();
+    if (!token) return null;
+
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+
+    try {
+      const json = this.base64UrlDecode(parts[1]);
+      const payload = JSON.parse(json) as JwtPayload;
+      return payload && typeof payload === 'object' ? payload : null;
+    } catch {
+      return null;
+    }
+  }
+
+  getRole(): string | null {
+    const role = this.getAccessTokenPayload()?.role;
+    return typeof role === 'string' && role.trim() ? role.trim().toLowerCase() : null;
+  }
+
+  isAdmin(): boolean {
+    return this.getRole() === 'admin';
+  }
+
   private setCookie(name: string, value: string, maxAgeSeconds: number) {
     document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; Max-Age=${maxAgeSeconds}; Path=/; SameSite=Lax`;
   }
@@ -42,5 +76,13 @@ export class TokenService {
 
   private deleteCookie(name: string) {
     document.cookie = `${encodeURIComponent(name)}=; Max-Age=0; Path=/; SameSite=Lax`;
+  }
+
+  private base64UrlDecode(input: string): string {
+    const base64 = input.replace(/-/g, '+').replace(/_/g, '/');
+    const pad = base64.length % 4 === 0 ? '' : '='.repeat(4 - (base64.length % 4));
+    const decoded = atob(base64 + pad);
+    const bytes = Uint8Array.from(decoded, c => c.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
   }
 }

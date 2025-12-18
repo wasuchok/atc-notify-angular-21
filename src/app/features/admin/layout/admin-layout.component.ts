@@ -4,6 +4,7 @@ import { NavigationCancel, NavigationEnd, NavigationError, NavigationStart, Rout
 import { JoinedChannelsService } from '../../../core/services/joined-channels.service';
 import { LoadingService } from '../../../core/services/loading.service';
 import { RealtimeService } from '../../../core/services/realtime.service';
+import { TokenService } from '../../../core/services/token.service';
 import { SwalService } from '../../../shared/swal/swal.service';
 
 @Component({
@@ -64,15 +65,17 @@ import { SwalService } from '../../../shared/swal/swal.service';
         </div>
 
         <div class="p-2 border-t border-slate-800 space-y-2">
-          <a routerLink="/admin/settings" routerLinkActive="bg-slate-800 border-slate-700"
-            class="w-full h-11 rounded-2xl bg-slate-900 border border-transparent hover:bg-slate-800 hover:border-slate-700 transition-colors flex items-center justify-center"
-            title="ตั้งค่า">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round"
-                d="M11.983 2.25c.426 0 .84.048 1.238.139l.385 2.311a7.5 7.5 0 011.624.94l2.18-.94a.75.75 0 01.92.33l1.5 2.598a.75.75 0 01-.184.96l-1.795 1.372a7.55 7.55 0 010 1.88l1.795 1.372a.75.75 0 01.184.96l-1.5 2.598a.75.75 0 01-.92.33l-2.18-.94a7.5 7.5 0 01-1.624.94l-.385 2.311a.75.75 0 01-.74.627h-3a.75.75 0 01-.74-.627l-.385-2.311a7.5 7.5 0 01-1.624-.94l-2.18.94a.75.75 0 01-.92-.33l-1.5-2.598a.75.75 0 01.184-.96l1.795-1.372a7.55 7.55 0 010-1.88L2.324 9.29a.75.75 0 01-.184-.96l1.5-2.598a.75.75 0 01.92-.33l2.18.94a7.5 7.5 0 011.624-.94l.385-2.311a.75.75 0 01.74-.627h3zM12 15.75a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" />
-            </svg>
-          </a>
+          @if (isAdmin()) {
+            <a routerLink="/admin/settings" routerLinkActive="bg-slate-800 border-slate-700"
+              class="w-full h-11 rounded-2xl bg-slate-900 border border-transparent hover:bg-slate-800 hover:border-slate-700 transition-colors flex items-center justify-center"
+              title="ตั้งค่า">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M11.983 2.25c.426 0 .84.048 1.238.139l.385 2.311a7.5 7.5 0 011.624.94l2.18-.94a.75.75 0 01.92.33l1.5 2.598a.75.75 0 01-.184.96l-1.795 1.372a7.55 7.55 0 010 1.88l1.795 1.372a.75.75 0 01.184.96l-1.5 2.598a.75.75 0 01-.92.33l-2.18-.94a7.5 7.5 0 01-1.624.94l-.385 2.311a.75.75 0 01-.74.627h-3a.75.75 0 01-.74-.627l-.385-2.311a7.5 7.5 0 01-1.624-.94l-2.18.94a.75.75 0 01-.92-.33l-1.5-2.598a.75.75 0 01.184-.96l1.795-1.372a7.55 7.55 0 010-1.88L2.324 9.29a.75.75 0 01-.184-.96l1.5-2.598a.75.75 0 01.92-.33l2.18.94a7.5 7.5 0 011.624-.94l.385-2.311a.75.75 0 01.74-.627h3zM12 15.75a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" />
+              </svg>
+            </a>
+          }
         </div>
       </aside>
 
@@ -110,7 +113,12 @@ import { SwalService } from '../../../shared/swal/swal.service';
                     <a href="#" class="block px-4 py-2 text-xs text-slate-600 hover:bg-slate-50">ตั้งค่าบัญชี</a>
                   </div>
                   <div class="border-t border-slate-100 my-1"></div>
-                  <a href="#" class="block px-4 py-2 text-xs text-red-600 hover:bg-red-50">ออกจากระบบ</a>
+                  <button
+                    type="button"
+                    (click)="logout()"
+                    class="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50">
+                    ออกจากระบบ
+                  </button>
                 </div>
                 <div (click)="toggleProfileMenu()" class="fixed inset-0 z-[2000]" style="cursor: default;"></div>
               }
@@ -151,6 +159,7 @@ export class AdminLayoutComponent {
     public readonly loadingService: LoadingService,
     public readonly channelsService: JoinedChannelsService,
     private readonly realtime: RealtimeService,
+    private readonly tokenService: TokenService,
     private readonly swal: SwalService
   ) {
     this.router.events.subscribe((event) => {
@@ -170,6 +179,20 @@ export class AdminLayoutComponent {
 
   loading() {
     return this.loadingService.loading();
+  }
+
+  isAdmin() {
+    return this.tokenService.isAdmin();
+  }
+
+  async logout() {
+    const confirmed = await this.swal.question('ออกจากระบบ', 'ต้องการออกจากระบบใช่หรือไม่?');
+    if (!confirmed) return;
+
+    this.profileMenuOpen.set(false);
+    this.realtime.disconnect();
+    this.tokenService.clearTokens();
+    await this.router.navigateByUrl('/login');
   }
 
   async refreshChannels() {

@@ -9,10 +9,13 @@ export const guestGuard: CanMatchFn = () => {
   const apiService = inject(ApiService);
   const router = inject(Router);
 
-  const toDashboard = () => router.createUrlTree(['/admin/dashboard']);
+  const toHome = () =>
+    tokenService.isAdmin()
+      ? router.createUrlTree(['/admin/dashboard'])
+      : router.createUrlTree(['/admin/chat']);
 
   const accessToken = tokenService.getAccessToken();
-  if (accessToken) return toDashboard();
+  if (accessToken) return toHome();
 
   const refreshToken = tokenService.getRefreshToken();
   if (!refreshToken) return true;
@@ -21,7 +24,7 @@ export const guestGuard: CanMatchFn = () => {
     map(res => {
       const pair = ApiService.extractTokenPair(res);
       tokenService.setTokens(pair);
-      return toDashboard();
+      return toHome();
     }),
     catchError(() => {
       tokenService.clearTokens();
@@ -29,4 +32,3 @@ export const guestGuard: CanMatchFn = () => {
     })
   );
 };
-

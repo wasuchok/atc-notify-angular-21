@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { AdminLayoutComponent } from './layout/admin-layout.component';
+import { adminGuard } from '../../core/guards/admin.guard';
 
 export const ADMIN_ROUTES: Routes = [
   {
@@ -21,6 +22,7 @@ export const ADMIN_ROUTES: Routes = [
       },
       {
         path: 'settings',
+        canMatch: [adminGuard],
         loadComponent: () => import('./settings/settings.component').then(m => m.SettingsComponent),
         children: [
           { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -28,27 +30,28 @@ export const ADMIN_ROUTES: Routes = [
           { path: 'users', loadComponent: () => import('./users/user-management.component').then(m => m.UserManagementComponent) },
           { path: 'channels', loadComponent: () => import('./channels/channels').then(m => m.Channels) },
           { path: 'teams', loadComponent: () => import('./teams/teams').then(m => m.TeamsComponent) },
+          { path: 'webhooks', loadComponent: () => import('./webhooks/webhook-management.component').then(m => m.WebhookManagementComponent) },
         ]
       },
       {
         path: 'dashboard',
-        redirectTo: 'settings/dashboard',
-        pathMatch: 'full'
+        canMatch: [adminGuard],
+        loadComponent: () => import('./dashboard/dashboard.component').then(m => m.DashboardComponent)
       },
       {
         path: 'users',
-        redirectTo: 'settings/users',
-        pathMatch: 'full'
+        canMatch: [adminGuard],
+        loadComponent: () => import('./users/user-management.component').then(m => m.UserManagementComponent)
       },
       {
         path: 'channels',
-        redirectTo: 'settings/channels',
-        pathMatch: 'full'
+        canMatch: [adminGuard],
+        loadComponent: () => import('./channels/channels').then(m => m.Channels)
       },
       {
         path: 'teams',
-        redirectTo: 'settings/teams',
-        pathMatch: 'full'
+        canMatch: [adminGuard],
+        loadComponent: () => import('./teams/teams').then(m => m.TeamsComponent)
       },
       {
         path: '**',
