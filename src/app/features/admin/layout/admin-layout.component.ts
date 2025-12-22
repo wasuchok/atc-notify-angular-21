@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, signal } from '@angular/core';
 import { NavigationCancel, NavigationEnd, NavigationError, NavigationStart, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+import { ApiService } from '../../../core/services/api.service';
 import { JoinedChannelsService } from '../../../core/services/joined-channels.service';
 import { LoadingService } from '../../../core/services/loading.service';
 import { RealtimeService } from '../../../core/services/realtime.service';
@@ -32,14 +34,7 @@ import { SwalService } from '../../../shared/swal/swal.service';
         </div>
 
         <div class="mt-3 flex-1 overflow-y-auto custom-scrollbar px-2 space-y-2">
-          <button type="button" (click)="refreshChannels()"
-            class="w-full h-11 rounded-2xl bg-slate-800 border border-slate-700 text-slate-200 hover:bg-slate-700 transition-colors flex items-center justify-center"
-            title="รีเฟรชรายการห้องแชท">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-3-6.708M21 3v6h-6" />
-            </svg>
-          </button>
+
 
           <a *ngFor="let c of channelsService.channels()"
             [routerLink]="['/admin/chat', c.id]"
@@ -87,14 +82,7 @@ import { SwalService } from '../../../shared/swal/swal.service';
           </div>
 
           <div class="flex items-center gap-2">
-            <button type="button" (click)="refreshChannels()"
-              class="w-9 h-9 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-center text-slate-600"
-              title="รีเฟรช">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-3-6.708M21 3v6h-6" />
-              </svg>
-            </button>
+
 
             <div class="relative">
               <button type="button" (click)="toggleProfileMenu()"
@@ -105,12 +93,8 @@ import { SwalService } from '../../../shared/swal/swal.service';
               @if (profileMenuOpen()) {
                 <div class="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl py-1 border border-slate-100 z-[2100]">
                   <div class="px-4 py-3 border-b border-slate-50 bg-slate-50/50">
-                    <p class="text-sm font-bold text-slate-800">ผู้ดูแลระบบ</p>
-                    <p class="text-xs text-slate-500">admin@notify.com</p>
-                  </div>
-                  <div class="py-1">
-                    <a href="#" class="block px-4 py-2 text-xs text-slate-600 hover:bg-slate-50">ข้อมูลส่วนตัว</a>
-                    <a href="#" class="block px-4 py-2 text-xs text-slate-600 hover:bg-slate-50">ตั้งค่าบัญชี</a>
+                    <p class="text-sm font-bold text-slate-800">{{ profileName() || 'ผู้ดูแลระบบ' }}</p>
+                    <p class="text-xs text-slate-500">{{ profileEmail() || 'admin@notify.com' }}</p>
                   </div>
                   <div class="border-t border-slate-100 my-1"></div>
                   <button
@@ -153,6 +137,8 @@ export class AdminLayoutComponent {
   profileMenuOpen = signal(false);
   currentTitle = signal('แชท');
   currentSubtitle = signal('เลือกห้องแชทจากแถบซ้าย');
+  profileName = signal<string | null>(null);
+  profileEmail = signal<string | null>(null);
 
   constructor(
     private readonly router: Router,
@@ -160,7 +146,8 @@ export class AdminLayoutComponent {
     public readonly channelsService: JoinedChannelsService,
     private readonly realtime: RealtimeService,
     private readonly tokenService: TokenService,
-    private readonly swal: SwalService
+    private readonly swal: SwalService,
+    private readonly api: ApiService
   ) {
     this.router.events.subscribe((event) => {
       if (event instanceof NavigationStart) {
@@ -175,6 +162,7 @@ export class AdminLayoutComponent {
 
     this.realtime.connect();
     void this.refreshChannels();
+    void this.loadUserProfile();
   }
 
   loading() {
@@ -193,6 +181,23 @@ export class AdminLayoutComponent {
     this.realtime.disconnect();
     this.tokenService.clearTokens();
     await this.router.navigateByUrl('/login');
+  }
+
+  async loadUserProfile() {
+    const payload = this.tokenService.getAccessTokenPayload();
+    const id = payload?.sub;
+    if (!id) return;
+    try {
+      const res = await firstValueFrom(
+        this.api.getPrivate<{ data: { display_name: string | null; email: string | null } }>(`/users/${id}`, {
+          withCredentials: true,
+        })
+      );
+      this.profileName.set(res.data?.display_name ?? payload.email ?? null);
+      this.profileEmail.set(res.data?.email ?? payload.email ?? null);
+    } catch {
+      // ignore; keep defaults
+    }
   }
 
   async refreshChannels() {

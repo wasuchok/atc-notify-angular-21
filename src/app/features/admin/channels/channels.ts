@@ -214,6 +214,15 @@ export class Channels {
   }
 
 
+  async onStatusChange(value: string) {
+    const next = (['all', 'active', 'inactive'] as const).includes(value as any)
+      ? (value as 'all' | 'active' | 'inactive')
+      : 'all';
+    if (next === this.statusFilter()) return;
+    this.statusFilter.set(next);
+    await this.fetchChannels();
+  }
+
   async confirmDelete(channel: Channel) {
     const ok = await this.swal.question('ยืนยันการลบ', `ต้องการลบแชนแนล "${channel.name}" ใช่หรือไม่?`);
     if (!ok) return;

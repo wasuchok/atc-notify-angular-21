@@ -56,7 +56,7 @@ type DashboardResponse = {
         </div>
 
         <div class="flex items-center gap-2">
-          <select [ngModel]="days()" (ngModelChange)="days.set($event)"
+          <select [ngModel]="days()" (ngModelChange)="onDaysChange($event)"
             class="text-sm border border-slate-200 rounded-xl text-slate-700 bg-white px-3 py-2 hover:bg-slate-50 focus:ring-4 focus:ring-slate-200 focus:border-slate-300 outline-none transition-all">
             <option [ngValue]="7">7 วันล่าสุด</option>
             <option [ngValue]="14">14 วันล่าสุด</option>
@@ -83,7 +83,7 @@ type DashboardResponse = {
               <p class="mt-2 text-2xl font-bold text-slate-900 tabular-nums">{{ stats().messages_today | number }}</p>
               <p class="text-[11px] text-slate-500">ข้อความ</p>
             </div>
-            <div class="w-11 h-11 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center border border-slate-200">
+            <div class="w-11 h-11 rounded-2xl bg-white text-slate-500 flex items-center justify-center ring-1 ring-slate-100">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -100,7 +100,7 @@ type DashboardResponse = {
               <p class="mt-2 text-2xl font-bold text-slate-900 tabular-nums">{{ stats().active_users | number }}</p>
               <p class="text-[11px] text-slate-500">คน</p>
             </div>
-            <div class="w-11 h-11 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center border border-slate-200">
+            <div class="w-11 h-11 rounded-2xl bg-white text-slate-500 flex items-center justify-center ring-1 ring-slate-100">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -117,7 +117,7 @@ type DashboardResponse = {
               <p class="mt-2 text-2xl font-bold text-slate-900 tabular-nums">{{ stats().active_channels | number }}</p>
               <p class="text-[11px] text-slate-500">แชนแนล</p>
             </div>
-            <div class="w-11 h-11 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center border border-slate-200">
+            <div class="w-11 h-11 rounded-2xl bg-white text-slate-500 flex items-center justify-center ring-1 ring-slate-100">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -134,7 +134,7 @@ type DashboardResponse = {
               <p class="mt-2 text-2xl font-bold text-slate-900 tabular-nums">{{ stats().device_tokens | number }}</p>
               <p class="text-[11px] text-slate-500">รายการ</p>
             </div>
-            <div class="w-11 h-11 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center border border-slate-200">
+            <div class="w-11 h-11 rounded-2xl bg-white text-slate-500 flex items-center justify-center ring-1 ring-slate-100">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -405,6 +405,12 @@ export class DashboardComponent {
     } finally {
       this.loadingService.hide();
     }
+  }
+
+  async onDaysChange(value: number) {
+    if (value === this.days()) return;
+    this.days.set(value);
+    await this.fetchDashboard();
   }
 
   thaiDayLabel(isoDate: string) {

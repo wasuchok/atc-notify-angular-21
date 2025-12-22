@@ -145,18 +145,7 @@ export class LoginComponent {
       this.tokenService.setTokens({ accessToken: res.data.accessToken, refreshToken: res.data.refreshToken });
       this.swal.success('เข้าสู่ระบบสำเร็จ', 'กำลังพาไปยังหน้าแดชบอร์ด');
 
-      const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
-      const role = String(res?.data?.user?.role ?? '').toLowerCase();
-      const isAdmin = role === 'admin';
-
-      const returnUrlSafe = returnUrl && returnUrl.startsWith('/') ? returnUrl : null;
-      const returnUrlAllowedForEmployee = !!returnUrlSafe && returnUrlSafe.startsWith('/admin/chat');
-
-      const safeUrl = isAdmin
-        ? (returnUrlSafe || '/admin/dashboard')
-        : (returnUrlAllowedForEmployee ? returnUrlSafe! : '/admin/chat');
-
-      await this.router.navigateByUrl(safeUrl);
+      await this.router.navigateByUrl('/admin/chat');
     } catch (err: any) {
       const message = err?.error?.message || 'ไม่สามารถเข้าสู่ระบบได้';
       this.swal.error('ไม่สามารถเข้าสู่ระบบได้', message || 'โปรดลองใหม่');

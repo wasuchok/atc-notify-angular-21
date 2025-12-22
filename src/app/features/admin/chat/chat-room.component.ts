@@ -122,7 +122,7 @@ type MessagesResponse = {
 
       <form class="p-4 border-t border-slate-100 bg-white" (submit)="sendMessage($event)">
         <div class="flex items-end gap-2">
-          <textarea [(ngModel)]="draft" name="draft" rows="1"
+          <textarea #messageInput [(ngModel)]="draft" name="draft" rows="1"
             (keydown.enter)="onEnter($event)"
             placeholder="พิมพ์ข้อความ..."
             class="flex-1 resize-none px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-slate-300 focus:ring-4 focus:ring-slate-200 outline-none transition-all text-sm"
@@ -174,7 +174,8 @@ type MessagesResponse = {
   `,
 })
 export class ChatRoomComponent {
-  @ViewChild('scrollEl') scrollEl?: ElementRef<HTMLDivElement>;
+@ViewChild('scrollEl') scrollEl?: ElementRef<HTMLDivElement>;
+@ViewChild('messageInput') messageInput?: ElementRef<HTMLTextAreaElement>;
 
   channelId = signal<number | null>(null);
   messages = signal<ChatMessage[]>([]);
@@ -385,6 +386,7 @@ export class ChatRoomComponent {
       this.swal.error('แจ้งเตือน', message);
     } finally {
       this.sending.set(false);
+      this.focusMessageInput();
     }
   }
 
@@ -437,6 +439,12 @@ export class ChatRoomComponent {
     this.initialAutoScrollTimer = setTimeout(() => {
       this.initialAutoScroll = false;
     }, 1200);
+  }
+
+  private focusMessageInput() {
+    const input = this.messageInput?.nativeElement;
+    if (!input) return;
+    setTimeout(() => input.focus(), 0);
   }
 
   onMediaLoaded() {
